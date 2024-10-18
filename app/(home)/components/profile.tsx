@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import ThemeToggle from "./theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default async function Profile() {
@@ -28,6 +29,7 @@ export default async function Profile() {
         <DropdownMenuItem>
           <Link href="/profile">Profile</Link>
         </DropdownMenuItem>
+        <ThemeToggle />
         <DropdownMenuItem className="p-0 sm:hidden">
           <Logout className="w-full" />
         </DropdownMenuItem>
