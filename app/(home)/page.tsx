@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
-import { signOut } from "./actions";
 import { redirect } from "next/navigation";
+import CreatePostForm from "./components/create-post-form";
 
 export default async function Home() {
   const session = await auth();
@@ -9,12 +9,5 @@ export default async function Home() {
     redirect("/auth");
   }
 
-  return (
-    <section>
-      <h1>Tornado Social Media App: {session.user?.name || "Anonymous"}</h1>
-      <form action={signOut}>
-        <button>SignOut</button>
-      </form>
-    </section>
-  );
+  return <CreatePostForm />;
 }
