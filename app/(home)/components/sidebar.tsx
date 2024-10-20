@@ -41,6 +41,7 @@ export default function Sidebar({ className }: SidebarProps) {
       {LINKS.map(({ href, title, icon }) => (
         <Button
           asChild
+          key={href}
           variant="ghost"
           className={cn(
             "w-full rounded-none sm:justify-start sm:rounded-md",
