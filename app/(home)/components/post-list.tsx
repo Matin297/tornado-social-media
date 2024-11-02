@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardContent,
 } from "@/components/ui/card";
+import PostActions from "./post-actions";
 import { formatDistanceToNow } from "date-fns";
 import Pagination from "@/components/pagination";
 import { fetchPosts, fetchTotalPostPages } from "../data";
@@ -29,10 +30,10 @@ export default async function PostList({ page }: PostListProps) {
             <article>
               <Card>
                 <CardHeader>
-                  <CardTitle>
+                  <CardTitle className="flex items-center justify-between">
                     <Link
                       href={`/users/${post.userId}`}
-                      className="flex items-center gap-2"
+                      className="inline-flex items-center gap-2"
                     >
                       <Avatar>
                         <AvatarImage
@@ -48,6 +49,7 @@ export default async function PostList({ page }: PostListProps) {
                         <p className="font-normal">{post.user.email}</p>
                       </div>
                     </Link>
+                    <PostActions postId={post.id} postUserId={post.userId} />
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
