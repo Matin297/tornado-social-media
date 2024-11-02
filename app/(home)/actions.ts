@@ -2,7 +2,9 @@
 
 import { z } from "zod";
 import db from "@/prisma/client";
+import { startTransition } from "react";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { signOut as AuthSignOut, auth } from "@/auth";
 
 export async function signOut() {
@@ -52,4 +54,42 @@ export async function publishPost(formData: FormData) {
       message: "Unable to publish the post! Try again later.",
     };
   }
+
+  revalidatePath("/");
+}
+
+export async function deletePost(formData: FormData) {
+  try {
+    const session = await auth();
+
+    if (!session?.user || !session.user.id) {
+      throw new Error("Unauthenticated request!");
+    }
+
+    const postID = formData.get("postID") as string;
+
+    if (!postID) throw new Error("PostID is missing!");
+
+    const post = await db.post.findFirst({
+      where: {
+        id: postID,
+        user: {
+          id: session.user.id,
+        },
+      },
+    });
+
+    if (!post) {
+      throw new Error("Post does not exist!");
+    }
+
+    await db.post.delete({ where: { id: postID } });
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Unable to delete the post!",
+    };
+  }
+
+  revalidatePath("/");
 }
