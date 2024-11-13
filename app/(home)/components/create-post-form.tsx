@@ -1,39 +1,62 @@
 "use client";
 
-import { publishPost } from "../actions";
+import { ZodError } from "zod";
+import { createPost } from "../data";
 import { useToast } from "@/hooks/use-toast";
-import { useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import SubmitButton from "@/components/submit-button";
+import { useRef, useState, FormEvent } from "react";
+import LoadingButton from "@/components/loading-button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type Errors = {
   message?: string;
   content?: string[];
 };
 
+interface CreatePostFormElements extends HTMLFormControlsCollection {
+  content: string;
+}
+
+interface CreatePostFormElement extends HTMLFormElement {
+  elements: CreatePostFormElements;
+}
+
 export default function CreatePostForm() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [errors, setErrors] = useState<Errors>({});
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef = useRef<CreatePostFormElement>(null);
 
-  async function publish(formData: FormData) {
-    setErrors({});
-
-    const result = await publishPost(formData);
-
-    if (result?.message) {
-      setErrors({
-        message: result.message,
-        ...(result.errors ?? {}),
-      });
-    } else {
-      toast({ description: "Post publish successfully!" });
+  const createPostMutation = useMutation({
+    mutationFn: createPost,
+    onSuccess() {
+      setErrors({});
       formRef.current!.reset();
-    }
+      toast({
+        description: "Post created successfully!",
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["posts"],
+      });
+    },
+    onError(error) {
+      if (error instanceof ZodError) {
+        setErrors(error.flatten().fieldErrors);
+      } else {
+        setErrors(error);
+      }
+    },
+  });
+
+  async function handleSubmit(event: FormEvent<CreatePostFormElement>) {
+    event?.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    createPostMutation.mutate(formData);
   }
 
   return (
-    <form action={publish} ref={formRef}>
+    <form onSubmit={handleSubmit} ref={formRef}>
       {errors.message && (
         <p className="mb-2 text-sm text-destructive">{errors.message}</p>
       )}
@@ -50,7 +73,13 @@ export default function CreatePostForm() {
           {errors.content && errors.content.join(",")}
         </p>
       </div>
-      <SubmitButton className="mt-4 w-full">Publish</SubmitButton>
+      <LoadingButton
+        pending={createPostMutation.isPending}
+        type="submit"
+        className="mt-4 w-full"
+      >
+        Publish
+      </LoadingButton>
     </form>
   );
 }
