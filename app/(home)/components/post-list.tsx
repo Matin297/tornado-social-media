@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   Card,
@@ -6,26 +8,43 @@ import {
   CardHeader,
   CardContent,
 } from "@/components/ui/card";
+import { fetchPosts } from "../data";
 import PostActions from "./post-actions";
+import { AlertCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 import Pagination from "@/components/pagination";
-import { fetchPosts, fetchTotalPostPages } from "../data";
+import { useSearchParams } from "next/navigation";
+import PostListSkeleton from "./post-list-skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-interface PostListProps {
-  page: number;
-}
+export default function PostList() {
+  const searchParams = useSearchParams();
+  const page = searchParams.get("page");
 
-export default async function PostList({ page }: PostListProps) {
-  const [totalPages, posts] = await Promise.all([
-    fetchTotalPostPages(),
-    fetchPosts({ page }),
-  ]);
+  const { data, status, error, isFetching } = useQuery({
+    staleTime: Infinity, // on demand control
+    refetchOnWindowFocus: false,
+    queryKey: ["posts", page ?? "1"],
+    queryFn: () => fetchPosts({ page }),
+  });
+
+  if (status === "pending" || isFetching) return <PostListSkeleton />;
+
+  if (status === "error")
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error.message}</AlertDescription>
+      </Alert>
+    );
 
   return (
     <>
       <ul className="space-y-4">
-        {posts.map((post) => (
+        {data.posts.map((post) => (
           <li key={post.id}>
             <article>
               <Card>
@@ -65,7 +84,7 @@ export default async function PostList({ page }: PostListProps) {
           </li>
         ))}
       </ul>
-      <Pagination totalPages={totalPages} />
+      <Pagination totalPages={data.count} />
     </>
   );
 }
