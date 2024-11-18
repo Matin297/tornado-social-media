@@ -55,11 +55,17 @@ export default function PostActions({ postId, postUserId }: PostActionsProps) {
     deleteMutation.mutate();
   }
 
+  function handleOpenChange(state: boolean) {
+    if (!state && !deleteMutation.isPending) {
+      setOpen(state);
+    }
+  }
+
   if (status === "loading") return <Skeleton className="h-9 w-16" />;
 
   if (status === "authenticated" && data.user?.id === postUserId)
     return (
-      <Dialog open={open}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <Button onClick={() => setOpen(true)} variant="destructive">
           Delete
         </Button>
@@ -77,7 +83,11 @@ export default function PostActions({ postId, postUserId }: PostActionsProps) {
             >
               Delete
             </LoadingButton>
-            <Button onClick={() => setOpen(false)} variant="secondary">
+            <Button
+              variant="secondary"
+              onClick={() => setOpen(false)}
+              disabled={deleteMutation.isPending}
+            >
               Cancel
             </Button>
           </DialogFooter>
