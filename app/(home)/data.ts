@@ -1,7 +1,51 @@
+import { auth } from "@/auth";
+import db from "@/prisma/client";
 import { Post } from "@prisma/client";
 import { PostWithUser } from "@/prisma/payloads";
 import { CreatePostSchema } from "@/validations/posts";
 
+export async function fetchFollowSuggestions() {
+  const session = await auth();
+
+  if (!session || !session.user?.id) {
+    throw new Error("Unauthenticated request!");
+  }
+
+  try {
+    const users = await db.user.findMany({
+      where: {
+        id: {
+          not: session.user.id,
+        },
+        followers: {
+          none: {
+            followerId: session.user.id,
+          },
+        },
+      },
+      include: {
+        followers: {
+          select: {
+            followerId: true,
+          },
+        },
+      },
+      take: 5,
+    });
+
+    return users.map((user) => ({
+      ...user,
+      followers: user.followers.map((follower) => follower.followerId),
+    }));
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Failed to fetch the users!");
+  }
+}
+
+// Client Side usage
 interface FilterOptions {
   page?: string | null;
 }
